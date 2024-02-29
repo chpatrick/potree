@@ -7,8 +7,9 @@ import {OctreeGeometry, OctreeGeometryNode} from "./OctreeGeometry.js";
 
 export class NodeLoader{
 
-	constructor(url){
+	constructor(url, useRangeQuery){
 		this.url = url;
+		this.useRangeQuery = useRangeQuery;
 	}
 
 	async load(node){
@@ -46,12 +47,23 @@ export class NodeLoader{
 				buffer = new ArrayBuffer(0);
 				console.warn(`loaded node with 0 bytes: ${node.name}`);
 			}else{
-				let response = await fetch(urlOctree, {
-					headers: {
-						'content-type': 'multipart/byteranges',
-						'Range': `bytes=${first}-${last}`,
-					},
-				});
+				let response;
+
+				if (this.useRangeQuery === true) {
+					const urlWithQuery = new URL(urlOctree, window.origin);
+					const searchParams = new URLSearchParams(urlWithQuery.search);
+					searchParams.append('start', first);
+					searchParams.append('end', last);
+					urlWithQuery.search = searchParams.toString();
+					response = await fetch(urlWithQuery);
+				} else {
+					response = await fetch(urlOctree, {
+						headers: {
+							'content-type': 'multipart/byteranges',
+							'Range': `bytes=${first}-${last}`,
+						},
+					});
+				}
 
 				buffer = await response.arrayBuffer();
 			}
@@ -384,14 +396,14 @@ export class OctreeLoader{
 		return attributes;
 	}
 
-	static async load(url){
+	static async load(url, useRangeQuery){
 
 		let response = await fetch(url);
 		let metadata = await response.json();
 
 		let attributes = OctreeLoader.parseAttributes(metadata.attributes);
 
-		let loader = new NodeLoader(url);
+		let loader = new NodeLoader(url, useRangeQuery);
 		loader.metadata = metadata;
 		loader.attributes = attributes;
 		loader.scale = metadata.scale;
