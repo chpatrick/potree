@@ -27,8 +27,25 @@ export class NormalizationMaterial extends THREE.RawShaderMaterial{
 
 	updateShaderSource() {
 
-		let vs = this.getDefines() + Shaders['normalize.vs'];
-		let fs = this.getDefines() + Shaders['normalize.fs'];
+		let vs = Shaders['normalize.vs'];
+		let fs = Shaders['normalize.fs'];
+
+		let definesString = this.getDefines();
+
+		let vsVersionIndex = vs.indexOf("#version ");
+		let fsVersionIndex = fs.indexOf("#version ");
+
+		if (vsVersionIndex >= 0) {
+			vs = vs.replace(/(#version .*)/, `$1\n${definesString}`)
+		} else {
+			vs = `${definesString}\n${vs}`;
+		}
+
+		if (fsVersionIndex >= 0) {
+			fs = fs.replace(/(#version .*)/, `$1\n${definesString}`)
+		} else {
+			fs = `${definesString}\n${fs}`;
+		}
 
 		this.setValues({
 			vertexShader: vs,

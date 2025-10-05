@@ -1428,7 +1428,7 @@ export class Viewer extends EventDispatcher{
 
 		let canvas = document.createElement("canvas");
 
-		let context = canvas.getContext('webgl', contextAttributes );
+		let context = canvas.getContext('webgl2', contextAttributes );
 
 		this.renderer = new THREE.WebGLRenderer({
 			alpha: true, 

@@ -51,8 +51,25 @@ export class EyeDomeLightingMaterial extends THREE.RawShaderMaterial{
 
 	updateShaderSource() {
 
-		let vs = this.getDefines() + Shaders['edl.vs'];
-		let fs = this.getDefines() + Shaders['edl.fs'];
+		let vs = Shaders['edl.vs'];
+		let fs = Shaders['edl.fs'];
+
+		let definesString = this.getDefines();
+
+		let vsVersionIndex = vs.indexOf("#version ");
+		let fsVersionIndex = fs.indexOf("#version ");
+
+		if (vsVersionIndex >= 0) {
+			vs = vs.replace(/(#version .*)/, `$1\n${definesString}`)
+		} else {
+			vs = `${definesString}\n${vs}`;
+		}
+
+		if (fsVersionIndex >= 0) {
+			fs = fs.replace(/(#version .*)/, `$1\n${definesString}`)
+		} else {
+			fs = `${definesString}\n${fs}`;
+		}
 
 		this.setValues({
 			vertexShader: vs,
