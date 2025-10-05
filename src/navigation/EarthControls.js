@@ -150,6 +150,11 @@ export class EarthControls extends EventDispatcher {
 		this.addEventListener('mouseup', onMouseUp);
 		this.addEventListener('dblclick', dblclick);
 
+		let pinch = (e) => {
+			this.wheelDelta += e.delta;
+		};
+
+		this.addEventListener('pinch', pinch);
 	}
 
 	setScene (scene) {

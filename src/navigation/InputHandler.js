@@ -38,8 +38,6 @@ export class InputHandler extends EventDispatcher {
 
 		this.logMessages = false;
 
-		this.previousTouches = [];
-
 		if (this.domElement.tabIndex === -1) {
 			this.domElement.tabIndex = 2222;
 		}
@@ -89,27 +87,18 @@ export class InputHandler extends EventDispatcher {
 
 			this.startDragging(null);
 		} else if (e.touches.length === 2) {
-			let rect = this.domElement.getBoundingClientRect();
-			let x = e.touches[0].pageX - rect.left;
-			let y = e.touches[0].pageY - rect.top;
-			this.mouse.set(x, y);
+			let t1 = e.touches[0];
+			let t2 = e.touches[1];
 
-			this.startDragging(null);
-			this.drag.mouse = 3;
-
-			for (let inputListener of this.getSortedListeners()) {
-				inputListener.dispatchEvent({
-					type: 'mousedown',
-					viewer: this.viewer,
-					mouse: this.mouse
-				});
-			}
+			let dx = t1.pageX - t2.pageX;
+			let dy = t1.pageY - t2.pageY;
+			this.pinchStart = Math.sqrt(dx * dx + dy * dy);
+			this.drag = null;
 		}
 
-		
 		for (let inputListener of this.getSortedListeners()) {
 			inputListener.dispatchEvent({
-				type: e.type,
+				type: 'touchstart',
 				touches: e.touches,
 				changedTouches: e.changedTouches
 			});
@@ -121,19 +110,22 @@ export class InputHandler extends EventDispatcher {
 
 		e.preventDefault();
 
-		for (let inputListener of this.getSortedListeners()) {
-			inputListener.dispatchEvent({
-				type: 'drop',
-				drag: this.drag,
-				viewer: this.viewer
-			});
+		if (this.drag) {
+			for (let inputListener of this.getSortedListeners()) {
+				inputListener.dispatchEvent({
+					type: 'drop',
+					drag: this.drag,
+					viewer: this.viewer
+				});
+			}
 		}
 
 		this.drag = null;
+		this.pinchStart = null;
 
 		for (let inputListener of this.getSortedListeners()) {
 			inputListener.dispatchEvent({
-				type: e.type,
+				type: 'touchend',
 				touches: e.touches,
 				changedTouches: e.changedTouches
 			});
@@ -159,7 +151,6 @@ export class InputHandler extends EventDispatcher {
 
 				this.drag.end.set(x, y);
 
-				if (this.logMessages) console.log(this.constructor.name + ': drag: ');
 				for (let inputListener of this.getSortedListeners()) {
 					inputListener.dispatchEvent({
 						type: 'drag',
@@ -168,50 +159,40 @@ export class InputHandler extends EventDispatcher {
 					});
 				}
 			}
-		}else if (e.touches.length === 2) {
-			let rect = this.domElement.getBoundingClientRect();
-			let x = e.touches[0].pageX - rect.left;
-			let y = e.touches[0].pageY - rect.top;
-			this.mouse.set(x, y);
-
+		} else if (e.touches.length === 2) {
 			if (this.drag) {
-				this.drag.mouse = 3;
+				this.drag = null;
+			}
 
-				this.drag.lastDrag.x = x - this.drag.end.x;
-				this.drag.lastDrag.y = y - this.drag.end.y;
+			let t1 = e.touches[0];
+			let t2 = e.touches[1];
 
-				this.drag.end.set(x, y);
+			let dx = t1.pageX - t2.pageX;
+			let dy = t1.pageY - t2.pageY;
+			let currentDistance = Math.sqrt(dx * dx + dy * dy);
 
-				if (this.logMessages) console.log(this.constructor.name + ': drag: ');
+			if (this.pinchStart) {
+				let delta = currentDistance - this.pinchStart;
+
 				for (let inputListener of this.getSortedListeners()) {
 					inputListener.dispatchEvent({
-						type: 'drag',
-						drag: this.drag,
+						type: 'pinch',
+						delta: delta / 10,
 						viewer: this.viewer
 					});
 				}
 			}
+
+			this.pinchStart = currentDistance;
 		}
 
 		for (let inputListener of this.getSortedListeners()) {
 			inputListener.dispatchEvent({
-				type: e.type,
+				type: 'touchmove',
 				touches: e.touches,
 				changedTouches: e.changedTouches
 			});
 		}
-
-		// DEBUG CODE
-		// let debugTouches = [...e.touches, {
-		//	pageX: this.domElement.clientWidth / 2,
-		//	pageY: this.domElement.clientHeight / 2}];
-		// for(let inputListener of this.getSortedListeners()){
-		//	inputListener.dispatchEvent({
-		//		type: e.type,
-		//		touches: debugTouches,
-		//		changedTouches: e.changedTouches
-		//	});
-		// }
 	}
 
 	onKeyDown (e) {
