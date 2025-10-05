@@ -94,6 +94,8 @@ export class InputHandler extends EventDispatcher {
 			let dy = t1.pageY - t2.pageY;
 			this.pinchStart = Math.sqrt(dx * dx + dy * dy);
 			this.drag = null;
+
+			this.rotateStart = Math.atan2(dy, dx);
 		}
 
 		for (let inputListener of this.getSortedListeners()) {
@@ -122,6 +124,7 @@ export class InputHandler extends EventDispatcher {
 
 		this.drag = null;
 		this.pinchStart = null;
+		this.rotateStart = null;
 
 		for (let inputListener of this.getSortedListeners()) {
 			inputListener.dispatchEvent({
@@ -170,6 +173,7 @@ export class InputHandler extends EventDispatcher {
 			let dx = t1.pageX - t2.pageX;
 			let dy = t1.pageY - t2.pageY;
 			let currentDistance = Math.sqrt(dx * dx + dy * dy);
+			let currentAngle = Math.atan2(dy, dx);
 
 			if (this.pinchStart) {
 				let delta = currentDistance - this.pinchStart;
@@ -183,7 +187,20 @@ export class InputHandler extends EventDispatcher {
 				}
 			}
 
+			if (this.rotateStart) {
+				let angle = currentAngle - this.rotateStart;
+
+				for (let inputListener of this.getSortedListeners()) {
+					inputListener.dispatchEvent({
+						type: 'rotate',
+						angle: angle,
+						viewer: this.viewer
+					});
+				}
+			}
+
 			this.pinchStart = currentDistance;
+			this.rotateStart = currentAngle;
 		}
 
 		for (let inputListener of this.getSortedListeners()) {

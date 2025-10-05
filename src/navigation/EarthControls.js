@@ -155,6 +155,35 @@ export class EarthControls extends EventDispatcher {
 		};
 
 		this.addEventListener('pinch', pinch);
+
+		let rotate = (e) => {
+			let view = this.viewer.scene.view;
+			let yawDelta = e.angle;
+			let pitchDelta = 0;
+
+			let originalPitch = view.pitch;
+			let tmpView = view.clone();
+			tmpView.pitch = tmpView.pitch + pitchDelta;
+			pitchDelta = tmpView.pitch - originalPitch;
+
+			let pivotToCam = new THREE.Vector3().subVectors(view.position, this.pivot);
+			let pivotToCamTarget = new THREE.Vector3().subVectors(view.getPivot(), this.pivot);
+			let side = view.getSide();
+
+			pivotToCam.applyAxisAngle(side, pitchDelta);
+			pivotToCamTarget.applyAxisAngle(side, pitchDelta);
+
+			pivotToCam.applyAxisAngle(new THREE.Vector3(0, 0, 1), yawDelta);
+			pivotToCamTarget.applyAxisAngle(new THREE.Vector3(0, 0, 1), yawDelta);
+
+			let newCam = new THREE.Vector3().addVectors(this.pivot, pivotToCam);
+
+			view.position.copy(newCam);
+			view.yaw += yawDelta;
+			view.pitch += pitchDelta;
+		};
+
+		this.addEventListener('rotate', rotate);
 	}
 
 	setScene (scene) {
