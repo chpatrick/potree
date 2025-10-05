@@ -38,6 +38,8 @@ export class InputHandler extends EventDispatcher {
 
 		this.logMessages = false;
 
+		this.previousTouches = [];
+
 		if (this.domElement.tabIndex === -1) {
 			this.domElement.tabIndex = 2222;
 		}
@@ -86,6 +88,22 @@ export class InputHandler extends EventDispatcher {
 			this.mouse.set(x, y);
 
 			this.startDragging(null);
+		} else if (e.touches.length === 2) {
+			let rect = this.domElement.getBoundingClientRect();
+			let x = e.touches[0].pageX - rect.left;
+			let y = e.touches[0].pageY - rect.top;
+			this.mouse.set(x, y);
+
+			this.startDragging(null);
+			this.drag.mouse = 3;
+
+			for (let inputListener of this.getSortedListeners()) {
+				inputListener.dispatchEvent({
+					type: 'mousedown',
+					viewer: this.viewer,
+					mouse: this.mouse
+				});
+			}
 		}
 
 		
@@ -135,6 +153,29 @@ export class InputHandler extends EventDispatcher {
 
 			if (this.drag) {
 				this.drag.mouse = 1;
+
+				this.drag.lastDrag.x = x - this.drag.end.x;
+				this.drag.lastDrag.y = y - this.drag.end.y;
+
+				this.drag.end.set(x, y);
+
+				if (this.logMessages) console.log(this.constructor.name + ': drag: ');
+				for (let inputListener of this.getSortedListeners()) {
+					inputListener.dispatchEvent({
+						type: 'drag',
+						drag: this.drag,
+						viewer: this.viewer
+					});
+				}
+			}
+		}else if (e.touches.length === 2) {
+			let rect = this.domElement.getBoundingClientRect();
+			let x = e.touches[0].pageX - rect.left;
+			let y = e.touches[0].pageY - rect.top;
+			this.mouse.set(x, y);
+
+			if (this.drag) {
+				this.drag.mouse = 3;
 
 				this.drag.lastDrag.x = x - this.drag.end.x;
 				this.drag.lastDrag.y = y - this.drag.end.y;

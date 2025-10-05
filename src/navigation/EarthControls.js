@@ -32,18 +32,26 @@ export class EarthControls extends EventDispatcher {
 		}
 
 		let drag = (e) => {
-			if (e.drag.object !== null) {
-				return;
-			}
 
-			if (!this.pivot) {
-				return;
-			}
 
 			if (e.drag.startHandled === undefined) {
 				e.drag.startHandled = true;
 
 				this.dispatchEvent({type: 'start'});
+
+				let I = Utils.getMousePointCloudIntersection(
+					e.drag.end,
+					this.scene.getActiveCamera(),
+					this.viewer,
+					this.scene.pointclouds,
+					{pickClipped: false});
+
+				if (I) {
+					this.pivot = I.location;
+					this.camStart = this.scene.getActiveCamera().clone();
+					this.pivotIndicator.visible = true;
+					this.pivotIndicator.position.copy(I.location);
+				}
 			}
 
 			let camStart = this.camStart;
@@ -115,21 +123,7 @@ export class EarthControls extends EventDispatcher {
 			}
 		};
 
-		let onMouseDown = e => {
-			let I = Utils.getMousePointCloudIntersection(
-				e.mouse, 
-				this.scene.getActiveCamera(), 
-				this.viewer, 
-				this.scene.pointclouds, 
-				{pickClipped: false});
-
-			if (I) {
-				this.pivot = I.location;
-				this.camStart = this.scene.getActiveCamera().clone();
-				this.pivotIndicator.visible = true;
-				this.pivotIndicator.position.copy(I.location);
-			}
-		};
+		let onMouseDown = e => {};
 
 		let drop = e => {
 			this.dispatchEvent({type: 'end'});
@@ -155,6 +149,7 @@ export class EarthControls extends EventDispatcher {
 		this.addEventListener('mousedown', onMouseDown);
 		this.addEventListener('mouseup', onMouseUp);
 		this.addEventListener('dblclick', dblclick);
+
 	}
 
 	setScene (scene) {
